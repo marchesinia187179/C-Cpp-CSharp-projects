@@ -10,7 +10,7 @@
 #include "point.h"
 
 struct entity {
-    point position[400];
+    point position[100];
     int length;
 } typedef entity;
 
