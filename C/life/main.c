@@ -136,15 +136,17 @@ int main(void) {
     char old_grid[GRID_CELLS];
     char new_grid[GRID_CELLS];
     set_grid(old_grid);
+    char *old = old_grid;
+    char *new = new_grid;
 
     while (1) {
-        compute_new_state(old_grid, new_grid);
-        print_grid(new_grid, &generation);
+        compute_new_state(old, new);
+        print_grid(new, &generation);
         usleep(100000);
 
-        compute_new_state(new_grid, old_grid);
-        print_grid(old_grid, &generation);
-        usleep(100000);
+        char *tmp = old;
+        old = new;
+        new = tmp;
     }
 
     return 0;
