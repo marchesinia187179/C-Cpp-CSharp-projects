@@ -1,0 +1,3 @@
+/Users/marchesinialessandro/CLionProjects/tac-bash-command/cmake-build-debug/CMakeFiles/tac_bash_command.dir
+/Users/marchesinialessandro/CLionProjects/tac-bash-command/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/marchesinialessandro/CLionProjects/tac-bash-command/cmake-build-debug/CMakeFiles/rebuild_cache.dir
