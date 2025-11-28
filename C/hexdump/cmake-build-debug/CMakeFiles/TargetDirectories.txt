@@ -1,0 +1,3 @@
+/Users/marchesinialessandro/CLionProjects/hexdump/cmake-build-debug/CMakeFiles/hexdump.dir
+/Users/marchesinialessandro/CLionProjects/hexdump/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/marchesinialessandro/CLionProjects/hexdump/cmake-build-debug/CMakeFiles/rebuild_cache.dir

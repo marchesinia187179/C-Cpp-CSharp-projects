@@ -1,0 +1,2 @@
+This is a test file to try the hexdump program.
+This program version was taken from the course on C language of Antirez.
