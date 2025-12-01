@@ -1,7 +1,9 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-/* ==================== Data Structures ==================== */
+/* ==================== Data structures ==================== */
 
 #define  TFOBJ_TYPE_INT 0
 #define  TFOBJ_TYPE_STR 1
@@ -37,7 +39,7 @@ typedef struct tfctx {
     tfobj *stack;
 } tfctx;
 
-/* ==================== Allocation Wrappers ==================== */
+/* ==================== Allocation wrappers ==================== */
 
 void *xmalloc(size_t size) {
     void *ptr = malloc(size);
@@ -48,7 +50,7 @@ void *xmalloc(size_t size) {
     return ptr;
 }
 
-/* ==================== Object Related Functions ====================
+/* ==================== Object related functions ====================
  * The following functions allocate Toy Foth objects of different types */
 
 // Allocate and initialize a new Toy Forth object
@@ -84,11 +86,103 @@ tfobj *createBoolObject(int i) {
     return o;
 }
 
+/* ==================== List object ==================== */
+
 tfobj *createListObject(int i) {
     tfobj *o = createObject(TFOBJ_TYPE_LIST);
     o->list.elements = NULL;
     o->list.len = 0;
     return o;
+}
+
+/* Add the new element at the end of the list 'l'
+ * It is up to the caller to increment the reference count of the
+ * element added to the list, if needed */
+void listPush(tfobj *l, tfobj *element) {
+    l->list.elements = realloc(l->list.elements, sizeof(tfobj *) * (l->list.len + 1));
+    l->list.elements[l->list.len] = element;
+    l->list.len++;
+}
+
+/* ==================== Turn program into Toy Forth list ==================== */
+
+void parseSpaces(tfparser *parser) {
+    while (isspace(parser->p[0])) {
+        parser->p++;
+    }
+}
+
+#define MAX_NUM_LEN 128
+tfobj *parseNumber(tfparser *parser) {
+    char buf[MAX_NUM_LEN];
+    char *start = parser->p;
+    char *end;
+
+    if (parser->p[0] == '-') parser->p++;
+
+    while (parser->p[0] && isdigit(parser->p[0])) {
+        parser->p++;
+    }
+    end = parser->p;
+    int numlen = end - start;
+    if (numlen >= MAX_NUM_LEN) return NULL;
+
+    memcpy(buf, start, numlen);
+    buf[numlen] = '\0';
+
+    tfobj *o = createIntObject(atoi(buf));
+    return o;
+}
+
+tfobj *compile(char *prg) {
+    tfparser parser;
+    parser.prg = prg;
+    parser.p = prg;
+
+    tfobj *parsed = createListObject();
+
+    while (parser.p) {
+        tfobj *o;
+        char *token_start = parser.p;
+
+        parseSpaces(&parser);
+        if (parser.p[0] == '\0') break;    // End of program reached
+
+        if (isdigit(parser.p[0]) || parser.p[0] == '-') {
+            o = parseNumber(&parser);
+        } else {
+            o = NULL;
+        }
+
+        // Check if the current token produced a parsing error
+        if (o == NULL) {
+            // FIXME: release parsed here
+            printf("Syntax error near: %32s ...\n", token_start);
+            return NULL;
+        } else {
+            listPush(parsed, o);
+        }
+    }
+    return parsed;
+}
+
+/* ==================== Execute the program ==================== */
+
+void exec(tfobj *prg) {
+    printf("[");
+    for (size_t j = 0; j < prg->list.len; j++) {
+        tfobj *o = prg->list.elements[j];
+        switch (o->type) {
+            case TFOBJ_TYPE_INT:
+                printf("%d", o->i);
+                break;
+            default:
+                printf("?");
+                break;
+        }
+        printf(" ");
+    }
+    printf("]\n");
 }
 
 /* ==================== Main ==================== */
@@ -99,8 +193,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // tfobj *prg = compile(prgtext);
-    // exec(prgtext);
+    // Read the program in memory, for later parsing
+    FILE *fp = fopen(argv[1], "r");
+    if (fp == NULL) {
+        fprintf(stderr, "File not found: %s\n", argv[1]);
+        exit(1);
+    }
 
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    char *prgtext = xmalloc(file_size + 1); // '+1' is the null term
+    fseek(fp, 0, SEEK_SET);
+    fread(prgtext, file_size, 1, fp);
+    prgtext[file_size] = '\0';
+
+    tfobj *prg = compile(prgtext);
+    exec(prg);
+
+    fclose(fp);
     return 0;
 }
